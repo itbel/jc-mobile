@@ -73,14 +73,15 @@ export default EStyleSheet.create({
     {
         paddingTop: 10,
         paddingBottom: 10,
-        marginBottom: 20,
-        marginLeft: 10,
+        marginBottom: 10,
+        marginLeft: 0,
         marginRight: 10,
         //    color:"#F0493E",
         backgroundColor: "#ffffff",
         borderWidth: 1,
         borderColor: "#F0493E",
-        boxShadow: "unset"
+        boxShadow: "unset",
+        justifyContent: "center",
     },
     OutlineSmallText: {
         color: "#F0493E",
