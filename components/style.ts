@@ -901,9 +901,9 @@ export default class MainStyles {
                 flexDirection: "row",
                 justifyContent: 'flex-start',
                 backgroundColor: "#F9FAFC",
-                width: '96%', 
+                width: '95%', 
                 flex: 'none',
-                height: '100vw'
+                height: '200vw'
             },
             groupScreenMainContainer: {
                 display: "flex",
