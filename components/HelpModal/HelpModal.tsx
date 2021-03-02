@@ -1,8 +1,10 @@
+import { GraphQLResult } from "@aws-amplify/api"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { Auth } from "aws-amplify"
+import { API, Auth, graphqlOperation } from "aws-amplify"
 import React, { useEffect, useState } from "react"
 import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from "react-native"
 import JCButton, { ButtonTypes } from "../../components/Forms/JCButton"
+import { sendHelpRequest } from "../../src/graphql/mutations"
 import HelpModalStyles from "../HelpModal/HelpModalStyles"
 interface Props {
   setShow: () => void
@@ -10,26 +12,45 @@ interface Props {
 
 export default function HelpModal({ setShow }: Props): JSX.Element {
   const [formData, setformData] = useState({
-    content: "",
-    sender: "",
+    body: "",
+    email: "",
   })
   const [sent, setSent] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [isLoading, setisLoading] = useState(true)
   const [showEmailField, setShowEmailField] = useState(false)
   const sendMessage = async () => {
-    const success = true
-    if (success) {
-      setSent(true)
+    const regex = /\S+@\S+\.\S+/
+
+    if (formData.email && regex.test(formData.email)) {
+      const variables = { email: formData.email, body: formData.body }
+      try {
+        const helpRequest = (await API.graphql(
+          graphqlOperation(sendHelpRequest, variables)
+        )) as GraphQLResult<any>
+        const failure = Boolean(helpRequest?.data?.sendHelpRequest?.err)
+        if (!failure) {
+          setSent(true)
+        } else {
+          setErrorMsg("An error occurred.\nPlease try again later.")
+          setSent(true)
+        }
+      } catch (err) {
+        setErrorMsg("An error occurred.\nPlease try again later.")
+        console.log(err)
+        setSent(true)
+      }
     } else {
-      setErrorMsg("Something went wrong.")
+      setErrorMsg("An error occurred.\nPlease enter a valid email address")
+      setSent(true)
     }
   }
+
   useEffect(() => {
     const gettingUser = Auth.currentUserInfo() // optimally should get this from user context
     gettingUser
       .then((user) => {
-        setformData({ ...formData, sender: user.attributes.email })
+        setformData({ ...formData, email: user.attributes.email })
         setisLoading(false)
       })
       .catch(() => {
@@ -117,7 +138,7 @@ export default function HelpModal({ setShow }: Props): JSX.Element {
           placeholder="Enter your email..."
           keyboardType="email-address"
           style={HelpModalStyles.HelpModalTextArea}
-          onChangeText={(email) => setformData({ ...formData, sender: email })}
+          onChangeText={(email) => setformData({ ...formData, email: email })}
         ></TextInput>
       ) : null}
       <TextInput
@@ -129,13 +150,13 @@ export default function HelpModal({ setShow }: Props): JSX.Element {
         autoFocus={!showEmailField}
         keyboardType="default"
         maxLength={1500}
-        onChangeText={(text) => setformData({ ...formData, content: text })}
+        onChangeText={(text) => setformData({ ...formData, body: text })}
       ></TextInput>
       <JCButton
         buttonType={ButtonTypes.SolidRightJustified}
-        enabled={!!formData.content && !!formData.sender}
-        onPress={() => {
-          sendMessage()
+        enabled={!!formData.body && !!formData.email}
+        onPress={async () => {
+          await sendMessage()
         }}
       >
         Send
