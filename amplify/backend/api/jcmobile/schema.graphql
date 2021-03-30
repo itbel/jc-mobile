@@ -560,14 +560,13 @@ type Activity
   @model
   @auth(
     rules: [
-      { allow: groups, groups: ["courseUser"], operations: [read] }
-      { allow: groups, groups: ["courseCoach"], operations: [read] }
-      { allow: groups, groups: ["courseAdmin"], operations: [read] }
+      { allow: owner, ownerField: "readUser", operations: [read] }
     ]
   ) 
-  @key(name: "byGroupTypeId", fields:["activityGroupType", "activityGroupId"], queryField:"activityByGroup")
+  @key(name: "byGroupTypeId", fields:["readUser", "time"], queryField:"activityByGroup")
   {
     id: ID!
+    readUser: ID!
     ownerName:String!
     ownerID:ID!
     owner:User @connection(fields:["ownerID"])
@@ -576,6 +575,7 @@ type Activity
     activityActionType: ActivityActionType!
     time: String!
     date: String!
+    expirationDate: AWSTimestamp! @ttl
   }
 
 type Payment
@@ -811,30 +811,19 @@ type DirectMessage
   messageRoom:DirectMessageRoom @connection(fields:["messageRoomID"])
 }
 
-type DirectMessageReply 
-  @model(queries: null)
+type DirectMessageReply @model(queries: null)
   @key(name: "repliesByDirectMessage", fields: ["messageId", "when"])
   @key(name: "subRepliesByReply", fields: ["parentReplyId", "when"])
   @key(name: "repliesByUser", fields: ["userId"])
- {
+  @auth(rules: [
+      { allow: owner, ownerField: "userId", operations: [create, update, delete] },
+      { allow: private, operations: [read] }
+  ]) {
     id: ID!
-    content: String
-    @auth(rules: [
-      { allow: owner, ownerField: "userId", operations: [create, update, read] },
-      { allow: owner, ownerField: "recipients", operations: [create, update, read] },
-    ])
+    content: String!
     when: String!
     attachment: String
-    @auth(rules: [
-      { allow: owner, ownerField: "userId", operations: [create, update, read] },
-      { allow: owner, ownerField: "recipients", operations: [create, update, read] },
-    ])
     attachmentName: String
-    @auth(rules: [
-      { allow: owner, ownerField: "userId", operations: [create, update, read] },
-      { allow: owner, ownerField: "recipients", operations: [create, update, read] },
-    ])
-     recipients: [String]!
     userId: ID!
     author: User @connection(fields: ["userId"])
 
@@ -846,7 +835,6 @@ type DirectMessageReply
     parentReplyId: ID!
     parentReply: DirectMessageReply @connection(fields: ["parentReplyId"])
     subReplies: [DirectMessageReply] @connection(keyName: "subRepliesByReply", fields: ["id"])
-   
 }
 type CRMRoot @model
   @auth(
