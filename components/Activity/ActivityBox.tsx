@@ -1,5 +1,5 @@
 import { GraphQLResult, GRAPHQL_AUTH_MODE } from "@aws-amplify/api/lib/types"
-import { API } from "aws-amplify"
+import { API, Auth } from "aws-amplify"
 import moment from "moment"
 import React, { useEffect, useState } from "react"
 import { Text, TouchableHighlight, View } from "react-native"
@@ -40,15 +40,20 @@ const ActivityBox = ({ title, activityGroupType, activityGroupId }: Props): JSX.
   }
   useEffect(() => {
     const loadActivities = async () => {
-      console.log("fetching activities")
+      const user = await Auth.currentAuthenticatedUser()
+      console.log("Fetching activities")
       const activities = (await API.graphql({
         query: activityByGroup,
         variables: {
-          activityGroupId: { eq: activityGroupId },
-          activityGroupType,
+          readUser: user.username,
+          sortDirection: "DESC",
+          filter: {
+            activityGroupId: { eq: activityGroupId },
+          },
         },
         authMode: GRAPHQL_AUTH_MODE.AMAZON_COGNITO_USER_POOLS,
       })) as GraphQLResult<any>
+      console.log(activities)
       setactivities(activities.data.activityByGroup.items ?? [])
     }
     loadActivities()
